@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Data.SqlClient;
 
 namespace TZ
 {
@@ -27,5 +28,9 @@ namespace TZ
                 {
                     webBuilder.UseStartup<Startup>();
                 });
+        
+        public static SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(
+            @"User ID=Tetris; Password=12345; Data Source=DESKTOP-0ADEN72\SQLEXPRESS; Initial Catalog=TetrisUsersDB;"
+        );
     }
 }

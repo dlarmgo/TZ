@@ -1,0 +1,123 @@
+@page "/sign"
+@using Microsoft.Extensions.Logging;
+@using Microsoft.Data.SqlClient;
+
+
+
+<div>
+    @if (SignedIn != true)
+    {
+        @if (SingingIn == false)
+        {
+            <form id="formSignUp" onSubmit="TryToRegistrate">
+                <input id="login" name="login" @bind="loginString" />
+                <input id="password" name="password" type="password" @bind="password"  />
+            <div>
+                <input id="signUpBtn" type="submit" value="Sign Up" @onclick="TryToRegistrate" />
+                or
+                <button id="singIpBtn" type="Button" @onclick="switchSigningIn">Sign In</button>
+            </div>
+            </form>
+        } else {
+            <form id="formSignIn" onSubmit="TryToLogIn">
+                <input id="login" name="login" @bind="loginString" />
+                <input id="password" name="password" type="password" @bind="password" />
+            <div>
+                <input id="signInBtn" type="submit" value="Sigh In" @onclick="TryToLogIn" />
+                or
+                <button id="singUnBtn" type="Button" @onclick="switchSigningIn">Sign Up</button>
+            </div>
+            </form>
+        }
+    } else {
+        <div>
+            <label class="btn btn-primary"                    width=300>Logged as <b>@loginString</b></label>
+        </div>
+        <div>
+            <button class="btn btn-primary" @onclick="LogOut" width=300>Log out</button>
+        </div>
+    }
+
+</div>
+
+
+
+
+@code {
+    private static readonly ILogger _logger = Program.LF.CreateLogger("Sign");
+    public static bool SignedIn = false;
+    public static bool SingingIn = true;
+
+    public static string loginString = "";
+    public static string password = "";
+
+    private static void switchSigningIn ()
+    {
+        SingingIn = !SingingIn;
+    }
+
+    private static void TryToRegistrate ()
+    {
+        try {
+            using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
+            {
+                _logger.LogInformation(Program.builder.ConnectionString);
+                Connection.Open();
+                string sqlQuery = $"INSERT INTO dbo.Accounts (Account, Password) VALUES (\'{loginString}\', \'{password}\')";
+                using (SqlCommand command = new SqlCommand(sqlQuery, Connection))
+                {
+                    command.ExecuteNonQuery();
+                }
+            }
+
+            SignedIn = true;
+
+
+        } catch (System.Exception ex) {
+            _logger.LogInformation($"Something wrong with DB connection in TryToRegistrate! {ex.Message}");
+        }
+        _logger.LogInformation("Done");
+        
+    }
+
+
+    private static void TryToLogIn ()
+    {
+        if (loginString != "")
+        {
+            int ans = 0;
+            try {
+                using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
+                {
+                    _logger.LogInformation(Program.builder.ConnectionString);
+                    Connection.Open();
+                    string sqlQuery = $"select case when EXISTS (SELECT * FROM Accounts WHERE Account=\'{loginString}\' AND Password=\'{password}\') then 1 else 0 end";
+                    _logger.LogInformation(sqlQuery);
+                    using (SqlCommand command = new SqlCommand(sqlQuery, Connection))
+                    {
+                        ans = (int)command.ExecuteScalar();
+                    }
+                }
+    
+    
+    
+            } catch (System.Exception ex) {
+                _logger.LogInformation($"Something wrong with DB connection in TryToRegistrate! {ex.Message}");
+            }
+            _logger.LogInformation($"Done with: TryToLogIn, answer is {ans}");
+            if (ans == 1) {
+                SignedIn = true;
+            }
+ 
+        }
+    }
+
+    private static void LogOut ()
+    {
+        SignedIn = false;
+    }
+
+
+
+
+}
