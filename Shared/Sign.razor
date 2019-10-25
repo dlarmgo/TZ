@@ -61,7 +61,6 @@
         try {
             using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
             {
-                _logger.LogInformation(Program.builder.ConnectionString);
                 Connection.Open();
                 string sqlQuery = $"INSERT INTO dbo.Accounts (Account, Password) VALUES (\'{loginString}\', \'{password}\')";
                 using (SqlCommand command = new SqlCommand(sqlQuery, Connection))

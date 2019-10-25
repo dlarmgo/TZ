@@ -1,0 +1,70 @@
+@page "/scores"
+@using Microsoft.Extensions.Logging;
+@using Microsoft.Data.SqlClient;
+
+
+<div>
+    <button @onclick="updateScores" >Update Scores Table</button>
+</div>
+<div>
+    <ul>
+    @foreach (string k in @ScoresDict.Keys)
+    {
+        <li>
+            @k : @ScoresDict[k];
+        </li>
+    }
+    </ul>
+</div>
+
+
+@code {
+    private static readonly ILogger _logger = Program.LF.CreateLogger("Scores");
+    private static int numberOfTop = 100;
+    public Dictionary<string, int> ScoresDict = getScores(numberOfTop);
+    
+    private void updateScores()
+    {
+        ScoresDict = getScores(numberOfTop);
+    }
+
+    private static Dictionary<string, int> getScores(int count)
+    {
+        Dictionary<string, int> dict = new Dictionary<string, int>();
+        try {
+            using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
+            {
+                Connection.Open();
+                string sqlQuery = $"SELECT TOP {count} Login, Score from Scores";
+                using (SqlCommand command = new SqlCommand(sqlQuery, Connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string User = reader.GetString(0).TrimEnd().ToString();
+                            int Score = reader.GetInt32(1);
+                            dict.Add(User, Score);
+                            _logger.LogInformation($"Got from DB: User - {User}, Score - {Score}");
+                        }
+                    }
+                }
+            }
+        } catch (System.Exception ex) {
+            _logger.LogInformation($"Something wrong with DB connection in getScores! {ex.Message}");
+        }
+        _logger.LogInformation("Done");
+        return dict;
+    }
+    
+
+
+
+}
+
+
+
+
+
+
+
