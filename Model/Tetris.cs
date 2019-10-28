@@ -132,9 +132,9 @@ namespace TZ.Model
                 {
                     if (state.currentState.matrix[x,y] == true 
                         && (x + anchor.X + motion.dx < 0
-                        || x + anchor.X + motion.dx >= board.width
-                        || y + anchor.Y + motion.dy < 0
-                        || y + anchor.Y + motion.dy >= board.height) )
+                        ||  x + anchor.X + motion.dx >= board.width
+                        ||  y + anchor.Y + motion.dy < 0
+                        ||  y + anchor.Y + motion.dy >= board.height) )
                     {
                         available = false;
                         return available;
