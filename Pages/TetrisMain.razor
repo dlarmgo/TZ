@@ -5,11 +5,14 @@
 @using TZ.Model;
 @using TZ.Data;
 
-
-        <button @onclick="testLog">Test Log</button>
+<div>
+<button id="testLogBtn" @onclick="testLog">Test Log</button>
+<button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
+<button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
+<button id="moveRightBtn" @onclick="moveRight">moveRight</button>
 
 <table>
-@for (int y = 0; y < homeTetris.board.height; y++)
+@for (int y = homeTetris.board.height - 1; y >= 0; y--)
 {
     <tr>
         @for (int x = 0; x < homeTetris.board.width; x++)
@@ -21,14 +24,19 @@
                     int el_x = el.state.currentState.matrix.GetLength(0) + el.anchor.X;
                     int el_y = el.state.currentState.matrix.GetLength(1) + el.anchor.Y;
 
-                    @if (x > el.anchor.X && x < el_x && y > el.anchor.Y && y < el_y && el.state.currentState.matrix[x - el.anchor.X, y - el.anchor.Y] == true) {C = true;}
+                    @if (x >= el.anchor.X && x < el_x && y >= el.anchor.Y && y < el_y && el.state.currentState.matrix[x - el.anchor.X, y - el.anchor.Y] == true) 
+                    {
+                        C = true;
+                        color = el.color;
+                    }
                 }
 
                 @if (@C == true)
                 {
-                    <b>+</b>
+                    <b id="el_{x}_{y}" style="color: @color;font-family: monospace;">+</b>
+                    _logger.LogInformation($"True on: {x}, {y}");
                 } else {
-                    <b>-</b>
+                    <b id="el_{x}_{y}">-</b>
                 }
             </td>
         }
@@ -37,6 +45,7 @@
     </tr>
 }
 </table>
+</div>
 
 
 
@@ -44,14 +53,35 @@
     private static readonly ILogger _logger = Program.LF.CreateLogger("TetrisMain");
 
     public TZ.Model.Tetris homeTetris = new Tetris();
+    public static string color = "black";
 
-
-    public void testLog()
+    public static void KeyPressed()
     {
-        _logger.LogInformation("aaaaaaa from TetrisMain");
+        _logger.LogInformation($"Key has been pressed!");
+
     }
 
 
+    public static void testLog()
+    {
+        //_logger.LogInformation("aaaaaaa from TetrisMain");
+    }
+
+    public void moveLeft()
+    {
+        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Left);
+    }
+
+    public void moveBottom()
+    {
+        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Bottom);
+    }
+
+    public void moveRight()
+    {
+        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Right);
+    }
+    
 }
 
 

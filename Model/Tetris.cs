@@ -57,7 +57,9 @@ namespace TZ.Model
         public T1 (int x, int y)
         {
             this.anchor = new Position(x, y);
-            this.state = phase1;
+            this.state = phase2;
+            var random = new Random();
+            this.color = string.Format("#{0:X6}", random.Next(65535) * 256);
         }
     }
 
@@ -70,6 +72,7 @@ namespace TZ.Model
     {
         public Board currentState;
         public FigurePhase nextState;
+        public string color;
         public FigurePhase (Board b, FigurePhase next)
         {
             currentState = b;
@@ -89,9 +92,7 @@ namespace TZ.Model
     public  class Figure
     {
         public Position anchor;
-
         public FigurePhase state;
-
         public bool CheckRotation (Board board)
         {
             bool available = true;
@@ -121,7 +122,6 @@ namespace TZ.Model
                 }
             }
         }
-
         public bool CheckMotion(Board board, MotionSide side)
         {
             bool available = true;
@@ -130,19 +130,36 @@ namespace TZ.Model
             {
                 for (int y = 0; y < state.currentState.height; y++)
                 {
-                    if (state.currentState.matrix[x,y] == true && board.matrix[x + anchor.X + motion.dx, y + anchor.Y + motion.dy] == true)
+                    if (state.currentState.matrix[x,y] == true 
+                        && (x + anchor.X + motion.dx < 0
+                        || x + anchor.X + motion.dx >= board.width
+                        || y + anchor.Y + motion.dy < 0
+                        || y + anchor.Y + motion.dy >= board.height) )
                     {
                         available = false;
+                        return available;
+                    }
+                    if (state.currentState.matrix[x,y] == true 
+                        && board.matrix[x + anchor.X + motion.dx, y + anchor.Y + motion.dy] == true)
+                    {
+                        available = false;
+                        return available;
                     }
                 }
 
             }
             return available;
         }
-
-
-
-
+        public void DoMotion(Board board, MotionSide  side)
+        {
+            Motion moving = new Motion(side);
+            if (CheckMotion(board, side) == true)
+            {
+                this.anchor.X += moving.dx;
+                this.anchor.Y += moving.dy;
+            }
+        }
+        public string color = "black";
     }
 
     public enum MotionSide
@@ -150,7 +167,6 @@ namespace TZ.Model
         Left,
         Bottom,
         Right,
-
     }
 
     public class Motion
@@ -160,14 +176,10 @@ namespace TZ.Model
 
         public Motion (MotionSide side)
         {
-            if (side == MotionSide.Left) {dx = 0; dy = -1;}
-            if (side == MotionSide.Bottom) {dx = -1; dy = 0;}
+            if (side == MotionSide.Left) {dx = -1; dy = 0;}
+            if (side == MotionSide.Bottom) {dx = 0; dy = -1;}
             if (side == MotionSide.Right) {dx = 1; dy = 0;}
-
         }
-
-
-
     }
 
 
