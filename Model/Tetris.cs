@@ -40,7 +40,7 @@ namespace TZ.Model
                     {false, true, false, false},
                 }
             ),
-            phase2
+            null
         );
 
         public static FigurePhase phase2 = new FigurePhase(
@@ -52,27 +52,27 @@ namespace TZ.Model
                     {false, false, false, false},
                 }
             ),
-            phase1
+            null
         );
         public T1 (int x, int y)
         {
             this.anchor = new Position(x, y);
-            this.state = phase2;
+            this.state = phase1;
             var random = new Random();
             this.color = string.Format("#{0:X6}", random.Next(65535) * 256);
         }
+        static T1()
+        {
+            phase1.nextState = phase2;
+            phase2.nextState = phase1;
+        }
     }
-
-
-
-
 
 
     public class FigurePhase
     {
         public Board currentState;
         public FigurePhase nextState;
-        public string color;
         public FigurePhase (Board b, FigurePhase next)
         {
             currentState = b;
@@ -81,34 +81,10 @@ namespace TZ.Model
     }
 
 
-
-
-
-
-
-
-
-
     public  class Figure
     {
         public Position anchor;
         public FigurePhase state;
-        public bool CheckRotation (Board board)
-        {
-            bool available = true;
-            for (int x = 0; x < state.nextState.currentState.width; x++)
-            {
-                for (int y = 0; y < state.nextState.currentState.height; y++)
-                {
-                    if (board.matrix[x + anchor.X, y + anchor.Y] == true)
-                    {
-                        available = false;
-                    }
-                }
-
-            }
-            return available;
-        }
         public void SetFigureToBoard (Board board)
         {
             for (int x = 0; x < state.currentState.width; x++)
@@ -126,21 +102,32 @@ namespace TZ.Model
         {
             bool available = true;
             Motion motion = new Motion(side);
-            for (int x = 0; x < state.currentState.width; x++)
+            Figure movedFigure = new Figure();
+            movedFigure.anchor.X = this.anchor.X + motion.dx;
+            movedFigure.anchor.Y = this.anchor.Y + motion.dy;
+            if (side == MotionSide.Rotate)
             {
-                for (int y = 0; y < state.currentState.height; y++)
+                movedFigure.state = this.state.nextState;
+            } else
+            {
+                movedFigure.state = this.state;
+            }
+            
+            for (int x = 0; x < movedFigure.state.currentState.width; x++)
+            {
+                for (int y = 0; y < movedFigure.state.currentState.height; y++)
                 {
-                    if (state.currentState.matrix[x,y] == true 
-                        && (x + anchor.X + motion.dx < 0
-                        ||  x + anchor.X + motion.dx >= board.width
-                        ||  y + anchor.Y + motion.dy < 0
-                        ||  y + anchor.Y + motion.dy >= board.height) )
+                    if (movedFigure.state.currentState.matrix[x,y] == true 
+                        && (x + movedFigure.anchor.X < 0
+                        ||  x + movedFigure.anchor.X >= board.width
+                        ||  y + movedFigure.anchor.Y < 0
+                        ||  y + movedFigure.anchor.Y >= board.height) )
                     {
                         available = false;
                         return available;
                     }
-                    if (state.currentState.matrix[x,y] == true 
-                        && board.matrix[x + anchor.X + motion.dx, y + anchor.Y + motion.dy] == true)
+                    if (movedFigure.state.currentState.matrix[x,y] == true 
+                        && board.matrix[x + movedFigure.anchor.X, y + movedFigure.anchor.Y] == true)
                     {
                         available = false;
                         return available;
@@ -157,9 +144,19 @@ namespace TZ.Model
             {
                 this.anchor.X += moving.dx;
                 this.anchor.Y += moving.dy;
+                if (side == MotionSide.Rotate)
+                {
+                    this.state = this.state.nextState;
+                }
             }
         }
         public string color = "black";
+        public Figure ()
+        {
+            anchor = new Position(0, 0);
+            state = new FigurePhase(new Board(0, 0), this.state);
+
+        }
     }
 
     public enum MotionSide
@@ -167,6 +164,7 @@ namespace TZ.Model
         Left,
         Bottom,
         Right,
+        Rotate
     }
 
     public class Motion
@@ -179,6 +177,7 @@ namespace TZ.Model
             if (side == MotionSide.Left) {dx = -1; dy = 0;}
             if (side == MotionSide.Bottom) {dx = 0; dy = -1;}
             if (side == MotionSide.Right) {dx = 1; dy = 0;}
+            if (side == MotionSide.Rotate) {dx = 0; dy = 0;}
         }
     }
 
