@@ -2,18 +2,32 @@
 using System;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Threading;
 
 
 
 
 namespace TZ.Model
 {
+    public class Home
+    {
+        public static Tetris homeTetris = new Tetris();
+    }
+
+
+
+
     public class Tetris
     {
+        public static readonly ILogger _logger = Program.LF.CreateLogger("Tetris");
+
         public int width;
         public int height;
         public Board board;
         public List<Figure> figures;
+
+        public Figure currentFigure;
+        public Thread autoThread;
 
         public Tetris(int w = 8, int h = 15)
         {
@@ -23,7 +37,26 @@ namespace TZ.Model
             figures = new List<Figure>();
             figures.Add(new T1(5, 5));
             figures.Add(new T1(0, 3));
-            figures.Add(new T1(1, 1));
+            currentFigure = new T1(3, 11);
+            figures.Add(currentFigure);
+
+
+
+            void startTicking() 
+            {
+                _logger.LogInformation($"from startTicking: started");
+                while (true)
+                {
+                    _logger.LogInformation($"from startTicking: Tick");
+                    Thread.Sleep(1000);
+                    figures.ForEach(el => el.DoMotion(board, MotionSide.Bottom));
+                }
+            };
+            autoThread = new Thread(startTicking);
+            //autoThread.Start();
+
+
+
         }
 
     }

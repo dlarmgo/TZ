@@ -4,9 +4,12 @@
 @using System.Collections.Generic;
 @using TZ.Model;
 @using TZ.Data;
+@using System.Threading;
+@inject NotifierService Notifier
+@implements IDisposable
 
 <div>
-<button id="testLogBtn" @onclick="testLog">Test Log</button>
+<button id="testTickingBtn" @onclick="testTicking">Test Ticking</button>
 <button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
 <button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
 <button id="moveRightBtn" @onclick="moveRight">moveRight</button>
@@ -19,7 +22,7 @@
         @for (int x = 0; x < homeTetris.board.width; x++)
         {
             bool C = false;
-            <td style="width=50px;height=50px">
+            <td>
                 @foreach (Figure el in homeTetris.figures)
                 {
                     int el_x = el.state.currentState.matrix.GetLength(0) + el.anchor.X;
@@ -34,10 +37,10 @@
 
                 @if (@C == true)
                 {
-                    <b id="el_{x}_{y}" style="background: @color;font-family: monospace;width=50px;height=50px;align=center">.</b>
+                    <div id="el_{x}_{y}" style="background: @color;font-family: monospace;width:20px;height:20px;text-align:center">.</div>
                     _logger.LogInformation($"True on: {x}, {y}");
                 } else {
-                    <b id="el_{x}_{y}" style="background:white;width=50px;height=50px;align=center">.</b>
+                    <div id="el_{x}_{y}" style="background:white;width:20px;height:20px;text-align:center">.</div>
                 }
             </td>
         }
@@ -56,6 +59,49 @@
     public TZ.Model.Tetris homeTetris = new Tetris();
     public static string color = "black";
 
+    protected override void OnInitialized()
+    {
+        Notifier.Notify += OnNotify;
+    }
+    public async Task OnNotify(Tetris tetris)
+    {
+        await InvokeAsync(() =>
+        {
+            homeTetris = tetris;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        Notifier.Notify -= OnNotify;
+    }
+
+    public async void ticking()
+    {
+        while (true)
+        {
+            Thread.Sleep(1000);
+            homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Bottom);
+            await OnNotify(homeTetris);
+        }
+
+    }
+    public Thread _thread;
+
+
+    public void testTicking()
+    {
+        _thread = new Thread(ticking);
+        _thread.Start();
+
+    }
+
+
+
+
+
+
     public static void KeyPressed()
     {
         _logger.LogInformation($"Key has been pressed!");
@@ -63,29 +109,25 @@
     }
 
 
-    public static void testLog()
-    {
-        //_logger.LogInformation("aaaaaaa from TetrisMain");
-    }
 
     public void moveLeft()
     {
-        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Left);
+        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Left);
     }
 
     public void moveBottom()
     {
-        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Bottom);
+        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Bottom);
     }
 
     public void moveRight()
     {
-        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Right);
+        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Right);
     }
-    
+
     public void rotate()
     {
-        homeTetris.figures.ElementAt(0).DoMotion(homeTetris.board, MotionSide.Rotate);
+        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Rotate);
     }
 }
 
