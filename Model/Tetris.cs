@@ -17,6 +17,8 @@ namespace TZ.Model
         public int level = 0;
         public int count = 0;
 
+        public bool end = false;
+
         public int width;
         public int height;
         public Board board;
@@ -108,13 +110,23 @@ namespace TZ.Model
                 }
 
             }
+            if (end == true)
+            {
+                available = false;
+            }
             return available;
         }
 
         public void SpawnFigure()
         {
-            currentFigure = new T1(3, 11);
-            figures.Add(currentFigure);
+            if (end == false)
+            {
+                currentFigure = new T1(3, 11);
+            }
+            if (CheckMotion(MotionSide.Bottom) == false)
+            {
+                end = true;
+            }
         }
 
         public void SetFigure()
