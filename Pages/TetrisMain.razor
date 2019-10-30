@@ -9,46 +9,48 @@
 @implements IDisposable
 
 <div @onkeydown="keyPressed">
-<button id="testTickingBtn" @onclick="testTicking">Test Ticking</button>
-<button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
-<button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
-<button id="moveRightBtn" @onclick="moveRight">moveRight</button>
-<button id="rotateBtn" @onclick="rotate">Rotate</button>
+    <button id="testTickingBtn" @onclick="testTicking">Test Ticking</button>
+    <button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
+    <button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
+    <button id="moveRightBtn" @onclick="moveRight">moveRight</button>
+    <button id="rotateBtn" @onclick="rotate">Rotate</button>
 
-<table>
-@for (int y = homeTetris.board.height - 1; y >= 0; y--)
-{
-    <tr>
-        @for (int x = 0; x < homeTetris.board.width; x++)
+    <div>
+        <h2>Current score: @homeTetris.score, Level: @homeTetris.level</h2>
+    </div>
+
+    <table>
+        @for (int y = homeTetris.board.height - 1; y >= 0; y--)
         {
-            bool C = false;
-            <td>
-                @foreach (Figure el in homeTetris.figures)
+            <tr>
+                @for (int x = 0; x < homeTetris.board.width; x++)
                 {
-                    int el_x = el.state.currentState.matrix.GetLength(0) + el.anchor.X;
-                    int el_y = el.state.currentState.matrix.GetLength(1) + el.anchor.Y;
-
-                    @if (x >= el.anchor.X && x < el_x && y >= el.anchor.Y && y < el_y && el.state.currentState.matrix[x - el.anchor.X, y - el.anchor.Y] == true) 
-                    {
-                        C = true;
-                        color = el.color;
-                    }
+                    <td>
+                        @if (homeTetris.board.matrix[x, y] == true)
+                        {
+                            <div id="el_{x}_{y}" style="background: @homeTetris.board.color[x, y]; font-family: monospace;width:20px;height:20px;text-align:center">.</div>
+                        }
+                        else
+                        {
+                            var el = homeTetris.currentFigure;
+                            int el_x = el.state.currentState.matrix.GetLength(0) + el.anchor.X;
+                            int el_y = el.state.currentState.matrix.GetLength(1) + el.anchor.Y;
+                            @if (x >= el.anchor.X && x < el_x && y >= el.anchor.Y && y < el_y && el.state.currentState.matrix[x - el.anchor.X, y - el.anchor.Y] == true)
+                            {
+                                <div id="el_{x}_{y}" style="background: @el.color; font-family: monospace;width:20px;height:20px;text-align:center">.</div>
+                            }
+                            else
+                            {
+                                <div id="el_{x}_{y}" style="background:white;width:20px;height:20px;text-align:center">.</div>
+                            }
+                        }
+                    </td>
                 }
 
-                @if (@C == true)
-                {
-                    <div id="el_{x}_{y}" style="background: @color;font-family: monospace;width:20px;height:20px;text-align:center">.</div>
-                    _logger.LogInformation($"True on: {x}, {y}");
-                } else {
-                    <div id="el_{x}_{y}" style="background:white;width:20px;height:20px;text-align:center">.</div>
-                }
-            </td>
+
+            </tr>
         }
-
-
-    </tr>
-}
-</table>
+    </table>
 </div>
 
 
@@ -106,7 +108,7 @@
     {
         while (true)
         {
-            Thread.Sleep(1000);
+            Thread.Sleep(1000 - homeTetris.level * 50);
             homeTetris.DoMotion(MotionSide.Bottom);
             await OnNotify(homeTetris);
         }

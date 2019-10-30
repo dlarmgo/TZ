@@ -13,6 +13,10 @@ namespace TZ.Model
     {
         public static readonly ILogger _logger = Program.LF.CreateLogger("Tetris");
 
+        public int score = 0;
+        public int level = 0;
+        public int count = 0;
+
         public int width;
         public int height;
         public Board board;
@@ -31,6 +35,40 @@ namespace TZ.Model
             figures.Add(currentFigure);
 
         }
+
+        public void Scoring()
+        {
+            for (int y = board.height - 1; y >= 0; y--)
+            {
+                bool fullRow = true;
+                for (int x = 0; x < board.width; x++)
+                {
+                    if (board.matrix[x, y] == false)
+                    {
+                        fullRow = false;
+                    }
+                }
+
+                if (fullRow == true)
+                {
+                    score += 100 + level * 10;
+                    count++;
+                    level = count / 3;
+
+                    for (int _y = y; _y < board.height - 1; _y++)
+                    {
+                        for (int x = 0; x < board.width; x++)
+                        {
+                            board.matrix[x, _y] = board.matrix[x, _y + 1];
+                            board.color[x, _y] = board.color[x, _y + 1];
+                        }
+                    }
+
+                   
+                }
+            }
+        }
+
 
         public bool CheckMotion(MotionSide side)
         {
@@ -72,24 +110,38 @@ namespace TZ.Model
             }
             return available;
         }
+
+        public void SpawnFigure()
+        {
+            currentFigure = new T1(3, 11);
+            figures.Add(currentFigure);
+        }
+
+        public void SetFigure()
+        {
+            currentFigure.isSet = true;
+            for (int x = 0; x < currentFigure.state.currentState.width; x++)
+            {
+                for (int y = 0; y < currentFigure.state.currentState.height; y++)
+                {
+                    if (currentFigure.state.currentState.matrix[x, y] == true)
+                    {
+                        board.matrix[x + currentFigure.anchor.X, y + currentFigure.anchor.Y] = true;
+                        board.color[x + currentFigure.anchor.X, y + currentFigure.anchor.Y] = currentFigure.color;
+                    }
+                }
+            }
+        }
+
         public void DoMotion(MotionSide side)
         {
             Motion moving = new Motion(side);
             // Setting figure to board
             if (side == MotionSide.Bottom && CheckMotion(side) == false)
             {
-                currentFigure.isSet = true;
-                for (int x = 0; x < currentFigure.state.currentState.width; x++)
-                {
-                    for (int y = 0; y < currentFigure.state.currentState.height; y++)
-                    {
-                        board.matrix[x + currentFigure.anchor.X, y + currentFigure.anchor.Y] = true;
-                    }
-                }
-
-                currentFigure = new T1(3, 11);
-                figures.Add(currentFigure);
-
+                SetFigure();
+                Scoring();
+                SpawnFigure();
             }
             if (CheckMotion(side) == true)
             {
@@ -106,11 +158,11 @@ namespace TZ.Model
     }
 
 
-    public class T1: Figure
+    public class T1 : Figure
     {
         public static FigurePhase phase1 = new FigurePhase(
             new Board(
-                new bool[, ] {
+                new bool[,] {
                     {false, true, false, false},
                     {false, true, false, false},
                     {false, true, false, false},
@@ -122,7 +174,7 @@ namespace TZ.Model
 
         public static FigurePhase phase2 = new FigurePhase(
             new Board(
-                new bool[, ] {
+                new bool[,] {
                     {false, false, false, false},
                     { true,  true,  true,  true},
                     {false, false, false, false},
@@ -131,7 +183,7 @@ namespace TZ.Model
             ),
             null
         );
-        public T1 (int x, int y)
+        public T1(int x, int y)
         {
             this.anchor = new Position(x, y);
             this.state = phase1;
@@ -150,7 +202,7 @@ namespace TZ.Model
     {
         public Board currentState;
         public FigurePhase nextState;
-        public FigurePhase (Board b, FigurePhase next)
+        public FigurePhase(Board b, FigurePhase next)
         {
             currentState = b;
             nextState = next;
@@ -158,12 +210,12 @@ namespace TZ.Model
     }
 
 
-    public  class Figure
+    public class Figure
     {
         public Position anchor;
         public FigurePhase state;
-        public bool isSet =  false;
-        public void SetFigureToBoard (Board board)
+        public bool isSet = false;
+        public void SetFigureToBoard(Board board)
         {
             for (int x = 0; x < state.currentState.width; x++)
             {
@@ -186,25 +238,26 @@ namespace TZ.Model
             if (side == MotionSide.Rotate)
             {
                 movedFigure.state = this.state.nextState;
-            } else
+            }
+            else
             {
                 movedFigure.state = this.state;
             }
-            
+
             for (int x = 0; x < movedFigure.state.currentState.width; x++)
             {
                 for (int y = 0; y < movedFigure.state.currentState.height; y++)
                 {
-                    if (movedFigure.state.currentState.matrix[x,y] == true 
+                    if (movedFigure.state.currentState.matrix[x, y] == true
                         && (x + movedFigure.anchor.X < 0
-                        ||  x + movedFigure.anchor.X >= board.width
-                        ||  y + movedFigure.anchor.Y < 0
-                        ||  y + movedFigure.anchor.Y >= board.height) )
+                        || x + movedFigure.anchor.X >= board.width
+                        || y + movedFigure.anchor.Y < 0
+                        || y + movedFigure.anchor.Y >= board.height))
                     {
                         available = false;
                         return available;
                     }
-                    if (movedFigure.state.currentState.matrix[x,y] == true 
+                    if (movedFigure.state.currentState.matrix[x, y] == true
                         && board.matrix[x + movedFigure.anchor.X, y + movedFigure.anchor.Y] == true)
                     {
                         available = false;
@@ -215,7 +268,7 @@ namespace TZ.Model
             }
             return available;
         }
-        public void DoMotion(Board board, MotionSide  side)
+        public void DoMotion(Board board, MotionSide side)
         {
             Motion moving = new Motion(side);
             // Setting figure to board
@@ -243,7 +296,7 @@ namespace TZ.Model
             }
         }
         public string color = "black";
-        public Figure ()
+        public Figure()
         {
             anchor = new Position(0, 0);
             state = new FigurePhase(new Board(0, 0), this.state);
@@ -264,12 +317,12 @@ namespace TZ.Model
         public int dx;
         public int dy;
 
-        public Motion (MotionSide side)
+        public Motion(MotionSide side)
         {
-            if (side == MotionSide.Left) {dx = -1; dy = 0;}
-            if (side == MotionSide.Bottom) {dx = 0; dy = -1;}
-            if (side == MotionSide.Right) {dx = 1; dy = 0;}
-            if (side == MotionSide.Rotate) {dx = 0; dy = 0;}
+            if (side == MotionSide.Left) { dx = -1; dy = 0; }
+            if (side == MotionSide.Bottom) { dx = 0; dy = -1; }
+            if (side == MotionSide.Right) { dx = 1; dy = 0; }
+            if (side == MotionSide.Rotate) { dx = 0; dy = 0; }
         }
     }
 
@@ -278,19 +331,21 @@ namespace TZ.Model
     {
         public int X;
         public int Y;
-        public Position(int x, int y) {X = x; Y = y;}
+        public Position(int x, int y) { X = x; Y = y; }
     }
 
     public class Board
     {
         public int width;
         public int height;
-        public bool[, ] matrix;
+        public bool[,] matrix;
+        public string[,] color;
         public Board(int w, int h)
         {
             width = w;
             height = h;
             matrix = new bool[w, h];
+            color = new string[w, h];
         }
 
         public Board(bool[,] m)
