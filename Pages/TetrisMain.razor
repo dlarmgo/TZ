@@ -8,7 +8,7 @@
 @inject NotifierService Notifier
 @implements IDisposable
 
-<div>
+<div @onkeydown="keyPressed">
 <button id="testTickingBtn" @onclick="testTicking">Test Ticking</button>
 <button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
 <button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
@@ -59,6 +59,31 @@
     public TZ.Model.Tetris homeTetris = new Tetris();
     public static string color = "black";
 
+    public void keyPressed(KeyboardEventArgs args)
+    {
+        if (args.Key == "ArrowLeft")
+        {
+            homeTetris.DoMotion(MotionSide.Left);
+        }
+        if (args.Key == "ArrowRight")
+        {
+            homeTetris.DoMotion(MotionSide.Right);
+        }
+        if (args.Key == "ArrowDown")
+        {
+            homeTetris.DoMotion(MotionSide.Bottom);
+        }
+        if (args.Key == "ArrowUp")
+        {
+            homeTetris.DoMotion(MotionSide.Rotate);
+        }
+
+    }
+
+
+
+
+
     protected override void OnInitialized()
     {
         Notifier.Notify += OnNotify;
@@ -82,7 +107,7 @@
         while (true)
         {
             Thread.Sleep(1000);
-            homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Bottom);
+            homeTetris.DoMotion(MotionSide.Bottom);
             await OnNotify(homeTetris);
         }
 
@@ -112,22 +137,22 @@
 
     public void moveLeft()
     {
-        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Left);
+        homeTetris.DoMotion(MotionSide.Left);
     }
 
     public void moveBottom()
     {
-        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Bottom);
+        homeTetris.DoMotion(MotionSide.Bottom);
     }
 
     public void moveRight()
     {
-        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Right);
+        homeTetris.DoMotion(MotionSide.Right);
     }
 
     public void rotate()
     {
-        homeTetris.currentFigure.DoMotion(homeTetris.board, MotionSide.Rotate);
+        homeTetris.DoMotion(MotionSide.Rotate);
     }
 }
 

@@ -9,14 +9,6 @@ using System.Threading;
 
 namespace TZ.Model
 {
-    public class Home
-    {
-        public static Tetris homeTetris = new Tetris();
-    }
-
-
-
-
     public class Tetris
     {
         public static readonly ILogger _logger = Program.LF.CreateLogger("Tetris");
@@ -35,28 +27,80 @@ namespace TZ.Model
             height = h;
             board = new Board(w, h);
             figures = new List<Figure>();
-            figures.Add(new T1(5, 5));
-            figures.Add(new T1(0, 3));
             currentFigure = new T1(3, 11);
             figures.Add(currentFigure);
 
+        }
 
-
-            void startTicking() 
+        public bool CheckMotion(MotionSide side)
+        {
+            bool available = true;
+            Motion motion = new Motion(side);
+            Figure movedFigure = new Figure();
+            movedFigure.anchor.X = currentFigure.anchor.X + motion.dx;
+            movedFigure.anchor.Y = currentFigure.anchor.Y + motion.dy;
+            if (side == MotionSide.Rotate)
             {
-                _logger.LogInformation($"from startTicking: started");
-                while (true)
+                movedFigure.state = currentFigure.state.nextState;
+            }
+            else
+            {
+                movedFigure.state = currentFigure.state;
+            }
+
+            for (int x = 0; x < movedFigure.state.currentState.width; x++)
+            {
+                for (int y = 0; y < movedFigure.state.currentState.height; y++)
                 {
-                    _logger.LogInformation($"from startTicking: Tick");
-                    Thread.Sleep(1000);
-                    figures.ForEach(el => el.DoMotion(board, MotionSide.Bottom));
+                    if (movedFigure.state.currentState.matrix[x, y] == true
+                        && (x + movedFigure.anchor.X < 0
+                        || x + movedFigure.anchor.X >= board.width
+                        || y + movedFigure.anchor.Y < 0
+                        || y + movedFigure.anchor.Y >= board.height))
+                    {
+                        available = false;
+                        return available;
+                    }
+                    if (movedFigure.state.currentState.matrix[x, y] == true
+                        && board.matrix[x + movedFigure.anchor.X, y + movedFigure.anchor.Y] == true)
+                    {
+                        available = false;
+                        return available;
+                    }
                 }
-            };
-            autoThread = new Thread(startTicking);
-            //autoThread.Start();
 
+            }
+            return available;
+        }
+        public void DoMotion(MotionSide side)
+        {
+            Motion moving = new Motion(side);
+            // Setting figure to board
+            if (side == MotionSide.Bottom && CheckMotion(side) == false)
+            {
+                currentFigure.isSet = true;
+                for (int x = 0; x < currentFigure.state.currentState.width; x++)
+                {
+                    for (int y = 0; y < currentFigure.state.currentState.height; y++)
+                    {
+                        board.matrix[x + currentFigure.anchor.X, y + currentFigure.anchor.Y] = true;
+                    }
+                }
 
+                currentFigure = new T1(3, 11);
+                figures.Add(currentFigure);
 
+            }
+            if (CheckMotion(side) == true)
+            {
+                currentFigure.anchor.X += moving.dx;
+                currentFigure.anchor.Y += moving.dy;
+
+                if (side == MotionSide.Rotate)
+                {
+                    currentFigure.state = currentFigure.state.nextState;
+                }
+            }
         }
 
     }
@@ -118,6 +162,7 @@ namespace TZ.Model
     {
         public Position anchor;
         public FigurePhase state;
+        public bool isSet =  false;
         public void SetFigureToBoard (Board board)
         {
             for (int x = 0; x < state.currentState.width; x++)
@@ -173,10 +218,24 @@ namespace TZ.Model
         public void DoMotion(Board board, MotionSide  side)
         {
             Motion moving = new Motion(side);
+            // Setting figure to board
+            if (side == MotionSide.Bottom && CheckMotion(board, side) == false)
+            {
+                this.isSet = true;
+                for (int x = 0; x < state.currentState.width; x++)
+                {
+                    for (int y = 0; y < state.currentState.height; y++)
+                    {
+                        board.matrix[x + this.anchor.X, y + this.anchor.Y] = true;
+                    }
+                }
+
+            }
             if (CheckMotion(board, side) == true)
             {
                 this.anchor.X += moving.dx;
                 this.anchor.Y += moving.dy;
+
                 if (side == MotionSide.Rotate)
                 {
                     this.state = this.state.nextState;
