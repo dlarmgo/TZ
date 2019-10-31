@@ -4,7 +4,7 @@
 
 
 <div>
-    <button @onclick="updateScores" >Update Scores Table</button>
+    <button @onclick="updateScores" >Update Score Tables</button>
 </div>
 <div>
     <ul>
@@ -17,20 +17,63 @@
     </ul>
 </div>
 
+<div>
+    <ul>
+    @foreach (var (user, score) in @ScoresList)
+    {
+        <li>
+            @user : @score;
+        </li>
+    }
+    </ul>
+</div>
+
+
 
 @code {
     private static readonly ILogger _logger = Program.LF.CreateLogger("Scores");
     private static int numberOfTop = 100;
-    public Dictionary<string, int> ScoresDict = getScores(numberOfTop);
-    
+    public Dictionary<string, int> ScoresDict = getHighestScores(numberOfTop);
+    public static List<Tuple<string, int>> ScoresList = getScoresFullList(numberOfTop);
+
     private void updateScores()
     {
-        ScoresDict = getScores(numberOfTop);
+        ScoresDict = getHighestScores(numberOfTop);
+        ScoresList = getScoresFullList(numberOfTop);
     }
 
-    private static Dictionary<string, int> getScores(int count)
+    private static Dictionary<string, int> getHighestScores(int count)
     {
         Dictionary<string, int> dict = new Dictionary<string, int>();
+        try {
+            using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
+            {
+                Connection.Open();
+                string sqlQuery = $"SELECT TOP {count} Login, MAX(Score) Score FROM Scores GROUP BY Login";
+                using (SqlCommand command = new SqlCommand(sqlQuery, Connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string User = reader.GetString(0).TrimEnd().ToString();
+                            int Score = reader.GetInt32(1);
+                            dict.Add(User, Score);
+                            //_logger.LogInformation($"Got from DB: User - {User}, Score - {Score}");
+                        }
+                    }
+                }
+            }
+        } catch (System.Exception ex) {
+            _logger.LogInformation($"Something wrong with DB connection in getScores! {ex.Message}");
+        }
+        _logger.LogInformation("Done");
+        return dict;
+    }
+
+    private static List<Tuple<string, int>> getScoresFullList(int count)
+    {
+        List<Tuple<string, int>> list = new List<Tuple<string, int>>();
         try {
             using (SqlConnection Connection = new SqlConnection(Program.builder.ConnectionString))
             {
@@ -44,8 +87,8 @@
                         {
                             string User = reader.GetString(0).TrimEnd().ToString();
                             int Score = reader.GetInt32(1);
-                            dict.Add(User, Score);
-                            _logger.LogInformation($"Got from DB: User - {User}, Score - {Score}");
+                            list.Add( (User, Score).ToTuple());
+                            //_logger.LogInformation($"Got from DB: User - {User}, Score - {Score}");
                         }
                     }
                 }
@@ -54,9 +97,13 @@
             _logger.LogInformation($"Something wrong with DB connection in getScores! {ex.Message}");
         }
         _logger.LogInformation("Done");
-        return dict;
+        list.Sort((a, b) =>
+        {
+            return b.Item2.CompareTo(a.Item2);
+        });
+        return list;
     }
-    
+
 
 
 
