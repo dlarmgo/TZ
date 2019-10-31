@@ -17,7 +17,20 @@ namespace TZ.Model
         public int level = 0;
         public int count = 0;
 
-        public bool end = false;
+        private bool _end = false;
+        public bool end 
+        { 
+            get { return _end; }
+            set
+            {
+                if (value == true)
+                {
+                    _end = value;
+                    Account.Account.addScore(score);
+                }
+
+            }
+        }
 
         public int width;
         public int height;
