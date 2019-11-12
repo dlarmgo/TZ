@@ -3,13 +3,12 @@
 @using Microsoft.Extensions.Logging;
 @using System.Collections.Generic;
 @using TZ.Model;
-@using TZ.Data;
 @using System.Threading;
 @inject NotifierService Notifier
 @implements IDisposable
 
-<div @onkeydown="keyPressed">
-    <button id="testTickingBtn" @onclick="testTicking">Test Ticking</button>
+<div @onkeydown="keyPressed" tabindex="0">
+    <button id="startTickingBtn" @onclick="testTicking">Start Ticking</button>
     <button id="moveLeftBtn" @onclick="moveLeft">moveLeft</button>
     <button id="moveBottomBtn" @onclick="moveBottom">moveBottom</button>
     <button id="moveRightBtn" @onclick="moveRight">moveRight</button>
@@ -18,10 +17,21 @@
     @if (homeTetris.end == false)
     {
 
-        <div>
-            <h2>Current score: @homeTetris.score, Level: @homeTetris.level</h2>
-        </div>
+        @if (tickingState == false)
+        {
+            <div>
+                <h2>Press "Enter" to start the game... </h2>
+            </div>
+        }
+        else
+        {
+            <div>
+                <h2>Current score: @homeTetris.score, Level: @homeTetris.level</h2>
+            </div>
+        }
+
     }
+
     else
     {
         <div>
@@ -68,6 +78,8 @@
 @code {
     private static readonly ILogger _logger = Program.LF.CreateLogger("TetrisMain");
 
+    public bool tickingState = false;
+
     public TZ.Model.Tetris homeTetris = new Tetris();
     public static string color = "black";
 
@@ -88,6 +100,10 @@
         if (args.Key == "ArrowUp")
         {
             homeTetris.DoMotion(MotionSide.Rotate);
+        }
+        if (args.Key == "Enter")
+        {
+            testTicking();
         }
 
     }
@@ -129,13 +145,14 @@
 
     public void testTicking()
     {
-        _thread = new Thread(ticking);
-        _thread.Start();
+        if (tickingState == false)
+        {
+            _thread = new Thread(ticking);
+            _thread.Start();
+            tickingState = true;
+        }
 
     }
-
-
-
 
 
 
