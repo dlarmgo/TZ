@@ -23,7 +23,7 @@ namespace TZ.Model
             get { return _end; }
             set
             {
-                if (value == true)
+                if (value == true && _end  == false)
                 {
                     _end = value;
                     Account.Account.addScore(score);
