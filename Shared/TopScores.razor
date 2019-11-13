@@ -1,64 +1,53 @@
 @page "/topscores"
 @using Microsoft.Extensions.Logging;
 @using Microsoft.Data.SqlClient;
+@using TZ.Model;
+@inject NotifierService NotifierTopScores;
+@implements IDisposable
 
 
 <div>
-    <ul>
-    @foreach (string k in @Top.Keys)
+    
+    <table @bind-value="Scoring.ScoresDict" @bind-value:event="onchange" style="color:white;margin-left:40px;margin-right:auto;margin-top:30px;" cellspacing="20">
+        <thead>
+            <tr>
+                <td colspan="2">
+                    Top Scores:
+                </td>
+            </tr>
+        </thead>
+    @foreach (string k in Scoring.ScoresDict.Keys)
     {
-        <li>
-            @k : @Top[k];
-        </li>
+        <tr>
+            <td style="">@k</td>
+            <td style="width:80%;text-align:center">@Scoring.ScoresDict[k]</td>
+        </tr>
     }
-    </ul>
+    </table>
 </div>
 
 
 
 @code {
     private static readonly ILogger _logger = Program.LF.CreateLogger("TopScores");
-    private static SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-    private static Dictionary<string,int> getTopScores(int count)
-    {
-        builder.DataSource=@"DESKTOP-0ADEN72\SQLEXPRESS";
-        builder.UserID = "Tetris";
-        builder.Password = "12345";
-        builder.InitialCatalog = "TetrisUsersDB";
-        Dictionary<string,int> dict = new Dictionary<string, int>();
-        try {
-            using ( SqlConnection Connection = new SqlConnection(builder.ConnectionString))
-                {
-                    Connection.Open();
-                    string sql = $"SELECT TOP {count} Login, Score from Scores";
-                    using (SqlCommand command = new SqlCommand(sql, Connection))
-                    {
-                        using (SqlDataReader reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string User = reader.GetString(0).TrimEnd().ToString();
-                                int Score = reader.GetInt32(1);
-                                dict.Add(User, Score);
-                                _logger.LogInformation($"Got from DB: User - {User}, Score - {Score}");
-                            }
-                        }
-                    }
-                }
-        } catch {
-            _logger.LogInformation("Something wrong with DB connection!");
-        }
 
-        return dict;
+    
+    protected override void OnInitialized()
+    {
+        Notifier.Notify += OnNotify;
+    }
+    public async Task OnNotify()
+    {
+        await InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
     }
 
-    
-    public static Dictionary<string,int> Top = getTopScores(5);
+    public void Dispose()
+    {
+        NotifierTopScores.Notify -= OnNotify;
+    }
 
-
-    
-
-    
-    
 
 }
